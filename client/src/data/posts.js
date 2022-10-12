@@ -1,3 +1,5 @@
+import React, { useState } from "react";
+
 const posts = [
   {
     id: 1,

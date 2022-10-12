@@ -1,57 +1,68 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useContext } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
+import moment from "moment";
+import { AuthContext } from "../context/AuthContext";
 import Edit from "../img/edit.png";
 import Delete from "../img/delete.png";
 import Menu from "../components/Menu";
 
 const Single = () => {
+  const [post, setPost] = useState({});
+  const navigate = useNavigate();
+  const loc = useLocation();
+  const postId = loc.pathname.split("/")[2];
+  const { currentUser } = useContext(AuthContext);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:8800/api/posts/${postId}`
+        );
+        setPost(res.data);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchData();
+  }, [postId]);
+
+  const handleDelete = async () => {
+    try {
+      await axios.delete(`http://localhost:8800/api/posts/${postId}`, {
+        withCredentials: true,
+      });
+      navigate("/");
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <div className="single">
       <div className="content">
-        <img
-          src="https://snappygoat.com/b/e5f59367dd04ccbe5839f25857bf0f0f4f2b1c3d"
-          alt=""
-        />
+        <img src={`/uploads/${post.img}`} alt="" />
         <div className="user">
-          <img
-            src="https://snappygoat.com/b/e5f59367dd04ccbe5839f25857bf0f0f4f2b1c3d"
-            alt=""
-          />
+          {post.userImg && <img src={post.userImg} alt="" />}
           <div className="info">
-            <span>John</span>
-            <p>Posted 2 days ago</p>
+            <span>{post.username}</span>
+            <p>Posted {moment(post.date).fromNow()}</p>
           </div>
-          <div className="edit">
-            <Link to={`/write?edit=2`}>
-              <img src={Edit} alt="" />
-            </Link>
-            <img src={Delete} alt="" />
-          </div>
+          {currentUser && currentUser.username === post.username && (
+            <div className="edit">
+              <Link to={`/write?edit=2`} state={post}>
+                <img src={Edit} alt="" />
+              </Link>
+              <img onClick={handleDelete} src={Delete} alt="" />
+            </div>
+          )}
         </div>
-        <h1>Lorem ipsum</h1>
-        <p className="post-text">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam mattis
-          mauris ac eros mattis scelerisque. Curabitur sit amet dui aliquet,
-          ornare risus a, malesuada massa. Aliquam non sapien in libero aliquam
-          ullamcorper rutrum at arcu. Suspendisse ut nisl semper, aliquet diam
-          vel, sagittis ipsum. Donec elementum ante euismod nisi efficitur
-          gravida. Phasellus tristique odio nibh, vitae iaculis dolor volutpat
-          at. Integer tristique, arcu nec ullamcorper scelerisque, nibh justo
-          ultricies tortor, quis mollis sapien purus a ipsum. Fusce convallis
-          aliquam maximus. Aenean vitae tristique ligula, quis consequat orci.
-          <br />
-          <br />
-          Proin aliquet erat libero, a varius odio ultricies id. Class aptent
-          taciti sociosqu ad litora torquent per conubia nostra, per inceptos
-          himenaeos. Aliquam justo nulla, efficitur vel dui accumsan, rutrum
-          porta nisl. In sagittis auctor ipsum. Sed sed scelerisque diam.
-          Suspendisse interdum commodo nulla id tempor. Nunc dictum metus id
-          bibendum blandit. Nunc hendrerit ante a ornare feugiat. Maecenas
-          dignissim venenatis ex et semper.
-        </p>
+        <h1>{post.title}</h1>
+        {post.descr}
       </div>
       <div className="menu">
-        <Menu />
+        <Menu category={post.category} />
       </div>
     </div>
   );
